@@ -1,0 +1,74 @@
+version: '3'
+
+services:
+#  postgres:
+#    image: postgres
+#    ports:
+#      - 5432:5432
+#    volumes:
+#      - postgres-data:/var/lib/postgresql/data
+#    environment:
+#      - POSTGRES_PASSWORD=admin
+#      - POSTGRES_USER=postgres
+#      - POSTGRES_DB=soa
+
+  eureka-container:
+    image: eureka-docker
+    ports:
+      - "8761:8761"
+    environment:
+      eureka.client.serviceUrl.defaultZone: http://host.docker.internal:8761/eureka/
+
+  zuul-container:
+    image: zuul-docker
+    ports:
+      - "8765:8765"
+    depends_on:
+      - eureka-container
+    links:
+      - eureka-container
+    environment:
+      server.port: 8761
+      eureka.client.serviceUrl.defaultZone: http://host.docker.internal:8761/eureka/
+
+  user-container:
+    image: user-docker
+    ports:
+      - "8000:8000"
+    depends_on:
+      - eureka-container
+    links:
+      - eureka-container
+    environment:
+      server.port: 8761
+      eureka.client.serviceUrl.defaultZone: http://host.docker.internal:8761/eureka/
+
+  movie-container:
+    image: movie-docker
+    ports:
+      - "8001:8001"
+    depends_on:
+      - eureka-container
+    links:
+      - eureka-container
+    environment:
+      server.port: 8761
+      eureka.client.serviceUrl.defaultZone: http://host.docker.internal:8761/eureka/
+
+  client:
+    build: C:\Users\z004p30k\Desktop\UBB_SE_Sem3_SOA-master\soa-client
+    environment:
+      - REACT_APP_PORT=3000
+    expose:
+      - 3000
+    ports:
+      - "3000:3000"
+    links:
+      - zuul-container
+      - eureka-container
+      - user-container
+      - book-container
+    command: npm start -- --host 0.0.0.0
+
+volumes:
+  my-datavolume:
